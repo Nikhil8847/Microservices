@@ -1,0 +1,170 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo
+    container_name: mongo
+    hostname: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - my_network
+    volumes:
+      - mongodbdata:/data/db
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    restart: always
+    hostname: rabbitmq
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:
+      - my_network
+
+  eurekaserver:
+    image: steeltoeoss/eureka-server
+    hostname: eurekaserver
+    container_name: eurekaserver
+    ports:
+      - 8761:8761
+    networks:
+      - my_network
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server
+    hostname: mssql
+    container_name: mssql
+    environment:
+      SA_PASSWORD: "Khota.99$"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_server_data:/var/opt/mssql
+    networks:
+      - my_network
+
+  authenticationserver:
+    image: authenticationserver:latest
+    hostname: authenticationserver
+    container_name: authenticationserver
+    environment:
+      ConnectionStrings__DefaultConnection: ${ConnectionString}
+      Eureka__Client__ServiceUrl: ${EUREKA_CLIENT_SERVICE_URL}
+    build:
+      context: ../Ecom.IdentityServer/Server
+      dockerfile: Dockerfile
+    ports:
+      - 5443:443
+      - 5002:80
+    depends_on:
+      - mssql
+      - eurekaserver
+    networks:
+      - my_network
+
+  ecomproductservice:
+    image: ecomproductservice:latest
+    build:
+      context: ../Ecom.ProductService
+      dockerfile: Dockerfile
+    hostname: ecomproductservice
+    container_name: ecomproductservice
+    environment:
+      Eureka__Client__ServiceUrl: ${EUREKA_CLIENT_SERVICE_URL}
+    networks:
+      - my_network
+    depends_on:
+      - rabbitmq
+      - mongo
+      - eurekaserver
+    ports:
+      - 5000:80
+      - 5001:443
+
+  ecomorderservice:
+    image: ecomorderservice:latest
+    hostname: ecomorderservice
+    container_name: ecomorderservice
+    build:
+      context: ../Ecom.OrderService
+      dockerfile: Dockerfile
+    environment:
+      Eureka__Client__ServiceUrl: ${EUREKA_CLIENT_SERVICE_URL}
+    networks:
+      - my_network
+    depends_on:
+      - rabbitmq
+      - mongo
+      - eurekaserver
+    ports:
+      - 7140:443
+      - 5204:80
+
+  ecominventoryservice:
+    image: ecominventoryservice:latest
+    hostname: ecominventoryservice
+    container_name: ecominventoryservice
+    build:
+      context: ../Ecom.Inventory
+      dockerfile: Dockerfile
+    environment:
+      Eureka__Client__ServiceUrl: ${EUREKA_CLIENT_SERVICE_URL}
+    networks:
+      - my_network
+    depends_on:
+      - rabbitmq
+      - mongo
+      - eurekaserver
+    ports:
+      - 7261:443
+      - 5113:80
+
+  ecomcartservice:
+    image: ecomcartservice:latest
+    container_name: ecomcartservice
+    hostname: ecomcartservice
+    build:
+      context: ../Ecom.CartService
+      dockerfile: Dockerfile
+    environment:
+      Eureka__Client__ServiceUrl: ${EUREKA_CLIENT_SERVICE_URL}
+    networks:
+      - my_network
+    depends_on:
+      - rabbitmq
+      - mongo
+      - eurekaserver
+    ports:
+      - 5005:443
+      - 5004:80
+
+  ecomapigateway:
+    image: ecomapigateway:latest
+    hostname: ecomapigateway
+    container_name: ecomapigateway
+    build:
+      context: ../Ecom.APIGateway
+      dockerfile: Dockerfile
+    environment:
+      Eureka__Client__ServiceUrl: ${EUREKA_CLIENT_SERVICE_URL}
+    depends_on:
+      - eurekaserver
+    networks:
+      - my_network
+    ports:
+      - 5032:80
+      - 7031:443
+
+volumes:
+  mongodbdata:
+  rabbitmqdata:
+  sql_server_data:
+
+networks:
+  my_network:
