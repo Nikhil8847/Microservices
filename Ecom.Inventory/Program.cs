@@ -18,7 +18,7 @@ builder.Services.AddMongo().AddMongoRepository<InventoryItem>("InventoryItems").
 builder.Services.AddAuthentication("Bearer")
 .AddIdentityServerAuthentication("Bearer", options =>
 {
-    options.Authority = "http://authenticationserver:5002";
+    options.Authority = "http://authenticationserver:80";
     options.ApiName = "EComAPI";
     options.RequireHttpsMetadata = false;
 });

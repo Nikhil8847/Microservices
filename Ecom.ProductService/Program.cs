@@ -21,7 +21,7 @@ builder.Services.AddServiceDiscovery(o => o.UseEureka());
 builder.Services.AddAuthentication("Bearer")
 .AddIdentityServerAuthentication("Bearer", options =>
 {
-    options.Authority = "http://authenticationserver:5002";
+    options.Authority = "http://authenticationserver:80";
     options.ApiName = "EComAPI";
     options.RequireHttpsMetadata = false;
 });
