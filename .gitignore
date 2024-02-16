@@ -21,3 +21,4 @@ Ecom.ProductService/Ecom.ProductService.Contracts/obj
 **/obj/
 **/*.dll
 /packages/NuGet.Config
+/Microservices Assignment.pdf
